@@ -17,37 +17,145 @@ The goal of this project is to implement the dining philosophers problem in Go, 
 
 - Philosophers and forks must communicate with each other *only* by  using channels
 
-- the system must be designed in a way that does not lead to a deadlock (and each philosopher must eat at least 3 times).
+- the system must be designed in a way that does not lead to  a deadlock (and each philosopher must eat at least 3 times).
 Comment in the code why the system does not deadlock.
 
 - A sequentialisation of the system (executing only one philosopher at a time) is not acceptable. I.e., philosophers must
 be able to request a fork at any time.
 
 - Philosophers must display (print on screen) any state change (eating or thinking) during their execution.
+
+
+used https://en.wikipedia.org/wiki/Dining_philosophers_problem
 */
 
 package main
 
 import (
 	"fmt"
+	"math/rand"
+	"sync"
 	"time"
 )
 
+var r = rand.New(rand.NewSource(time.Now().UnixNano()))
+var arbiter sync.Mutex // makes sure only one phill can use the waiter at a time
+var ateThrice = make(chan bool)
+var minTimes int = 3
+
 func main() {
-	pc := make(chan int)
-	fc := make(chan int)
-	go phill(1, pc, fc)
-	go phill(2, pc, fc)
-	time.Sleep(5 * time.Second)
+	// make a Channel per fork
+	fc1 := make(chan int)
+	fc2 := make(chan int)
+	fc3 := make(chan int)
+	fc4 := make(chan int)
+	fc5 := make(chan int)
+
+	// spawn threads
+	go fork(fc1)
+	go fork(fc2)
+	go fork(fc3)
+	go fork(fc4)
+	go fork(fc5)
+
+	go phill(1, fc1, fc2)
+	go phill(2, fc2, fc3)
+	go phill(3, fc3, fc4)
+	go phill(4, fc4, fc5)
+	go phill(5, fc5, fc1)
+
+	// recive 5 communications and throw them out
+	<-ateThrice
+	<-ateThrice
+	<-ateThrice
+	<-ateThrice
+	<-ateThrice
+	fmt.Println("EVERYONE ATE", minTimes, "TIMES")
 }
 
-func phill(pNumber int, pc chan int, fc chan int) {
+func phill(pNumber int, LeftFork chan int, RightFork chan int) {
+	var timesAte int
 	for {
-		fmt.Printf("\r", pNumber, "thinking")
-		time.Sleep(100 * time.Millisecond)
+		// should bro think or eat ?
+		if r.Intn(3) == 2 {
+			fmt.Println(pNumber, "is asking for the waiter")
+			arbiter.Lock()
+			fmt.Println(pNumber, "got the waiter")
+			result := waiter(LeftFork, RightFork)
+			if result {
+				fmt.Println(pNumber, "got the okay to take forks")
+				LeftFork <- pNumber
+				RightFork <- pNumber
+			}
+			arbiter.Unlock()
+			fmt.Println(pNumber, "finished with waiter")
+
+			if result {
+				fmt.Println(pNumber, "is eating")
+				// time.Sleep(time.Second)
+
+				arbiter.Lock()
+				fmt.Println(pNumber, "is dropping their forks")
+				LeftFork <- -1
+				RightFork <- -1
+				arbiter.Unlock()
+
+				timesAte++
+				if timesAte == minTimes {
+					fmt.Println(pNumber, "ate", minTimes, "times")
+					ateThrice <- true
+				}
+				continue
+			}
+		}
+
+		// bro is thinking
+		fmt.Println(pNumber, "is thinking")
+		// time.Sleep(time.Second / 2)
 	}
 }
 
-func fork(leftP int, rightP int, fc chan int) {
+func waiter(LeftFork chan int, RightFork chan int) bool {
+	LeftFork <- -2
+	res1 := <-LeftFork
+	RightFork <- -2
+	res2 := <-RightFork
 
+	if res1 == 1 || res2 == 1 { // are the forks in use
+		return false
+	} else {
+		return true
+	}
+}
+
+func fork(Channel chan int) {
+	var heldBy int = 0
+	for {
+		x := <-Channel
+		if x == -2 {
+			// report if fork is grabbed
+			if heldBy == 0 {
+				Channel <- -1 // -1 fork is not grabbed
+			} else {
+				Channel <- 1 // 1 fork is grabbed
+			}
+			continue
+		}
+
+		if x == -1 {
+			// drop fork
+			fmt.Println(heldBy, "dropped a fork")
+			heldBy = 0
+			continue
+		}
+
+		if heldBy != 0 {
+			fmt.Println(x, "tried to grab a fork that is allready held by", heldBy, "!!!")
+			continue
+		}
+
+		// any other number is good
+		heldBy = x
+		fmt.Println(heldBy, "grabbed a fork")
+	}
 }
