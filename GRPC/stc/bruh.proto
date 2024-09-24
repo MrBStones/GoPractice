@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package helloworld;
+package stc;
 
 service Teacher {
     rpc SayTeacher (TeacherRequest) returns (TeacherReply) {}
