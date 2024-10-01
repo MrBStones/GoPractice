@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "PhysicalTime.stc";
+
+service SyncTime {
+    rpc GetTime (TimeRequest) returns (TimeReply) {}
+}
+
+message TimeRequest {
+    int64 Time = 1;
+}
+
+message TimeReply {
+    int64 Time = 1;
+}
