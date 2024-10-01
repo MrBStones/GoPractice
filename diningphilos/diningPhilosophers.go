@@ -30,24 +30,72 @@ package main
 
 import (
 	"fmt"
+	"math/rand/v2"
+	"sync"
 	"time"
 )
 
+var arbiter1 sync.Mutex
+var arbiter2 sync.Mutex
+
 func main() {
-	pc := make(chan int)
-	fc := make(chan int)
-	go phill(1, pc, fc)
-	go phill(2, pc, fc)
-	time.Sleep(5 * time.Second)
+	var wgP sync.WaitGroup
+	var forks = make([]chan int, 5)
+	for i := 0; i < 5; i++ {
+		forks[i] = make(chan int)
+		go fork(forks[i])
+	}
+
+	for i := 0; i < 5; i++ {
+		wgP.Add(1)
+		go func(i int, forkChannel chan int) {
+			defer wgP.Done()
+			phill(i, forkChannel, forks[(i+1)%5])
+		}(i, forks[i])
+	}
+
+	wgP.Wait()
+	fmt.Println("All philosophers have eaten 3 times")
 }
 
-func phill(pNumber int, pc chan int, fc chan int) {
+func phill(pNumber int, L chan int, R chan int) {
+	var timesNomNommed = 0
 	for {
-		fmt.Printf("\r", pNumber, "thinking")
+		if rand.IntN(100) < 50 {
+			fmt.Println(pNumber, "thinking")
+			time.Sleep(100 * time.Millisecond)
+			continue
+		}
+
+		arbiter1.Lock()
+		L <- 1
+		R <- 1
+		arbiter1.Unlock()
+
+		fmt.Println(pNumber, "eating")
 		time.Sleep(100 * time.Millisecond)
+
+		arbiter2.Lock()
+		<-L
+		<-R
+		arbiter2.Unlock()
+
+		fmt.Println(pNumber, "done eating")
+		time.Sleep(100 * time.Millisecond)
+
+		timesNomNommed++
+		if timesNomNommed == 3 {
+			break
+		}
 	}
 }
 
-func fork(leftP int, rightP int, fc chan int) {
-
+func fork(fc chan int) {
+	for {
+		<-fc // philosopher is eating
+		time.Sleep(100 * time.Millisecond)
+		fc <- 1 // philosopher is done eating
+	}
 }
+
+// Code does not deadlock because the arbiter1 and arbiter2 mutexes are used to ensure that the forks are not taken by two at the same time
