@@ -2,9 +2,11 @@ package main
 
 import (
 	"context"
+	"fmt"
 	PhysicalTime_stc "helloworld/PhysicalTime"
 	"log"
 	"net"
+	"os"
 	"time"
 
 	"google.golang.org/grpc"
@@ -17,12 +19,26 @@ type SyncTimeServer struct {
 }
 
 func (m *SyncTimeServer) GetTime(ctx context.Context, request *PhysicalTime_stc.TimeRequest) (*PhysicalTime_stc.TimeReply, error) {
-	log.Println("GetTime called")
-	return &PhysicalTime_stc.TimeReply{Time: time.Now().Unix()}, nil
+	serverTime := time.Now().UnixMicro()
+	log.Println("--- GetTime ---")
+	log.Println("Time back: ", request.Time)
+	log.Println("Time sent: ", serverTime)
+	log.Println("Diff in mcrscnd: ", (serverTime - request.Time))
+	log.Println("Diff in seconds: ", (float64(serverTime-request.Time) * float64(1.0/1000000.0)))
+	fmt.Println()
+
+	return &PhysicalTime_stc.TimeReply{Time: serverTime}, nil
 }
 
 func main() {
-	lis, err := net.Listen("tcp", ":3333")
+	var port string
+	if len(os.Args) > 1 {
+		port = os.Args[1]
+	} else {
+		port = ":3333"
+	}
+
+	lis, err := net.Listen("tcp", port)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
