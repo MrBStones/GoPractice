@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	GRPC_stc "helloworld/GRPC/stc"
+	GRPCmicro_stc "helloworld/GRPCmicro/stc"
 	"log"
 	"time"
 
@@ -21,28 +21,30 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := GRPC_stc.NewUniversityClient(conn)
+	ct := GRPCmicro_stc.NewTeacherClient(conn)
+	cs := GRPCmicro_stc.NewStudentClient(conn)
+	cc := GRPCmicro_stc.NewCourseClient(conn)
 
 	// Contact the server and print out its response.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	r1, err := c.SayTeacher(ctx, &GRPC_stc.TeacherRequest{Name: name})
+	r1, err := ct.SayTeacher(ctx, &GRPCmicro_stc.TeacherRequest{Name: name})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
 
-	r2, err := c.SayStudent(ctx, &GRPC_stc.StudentRequest{Name: name})
+	r2, err := cs.SayStudent(ctx, &GRPCmicro_stc.StudentRequest{Name: name})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
 
-	r3, err := c.SayCourse(ctx, &GRPC_stc.CourseRequest{Name: name})
+	r3, err := cc.SayCourse(ctx, &GRPCmicro_stc.CourseRequest{Name: name})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
 
-	log.Printf("GreetingT: %s", r1.GetMessage())
-	log.Printf("GreetingS: %s", r2.GetMessage())
-	log.Printf("GreetingC: %s", r3.GetMessage())
+	log.Printf("GreetingT microservice: %s", r1.GetMessage())
+	log.Printf("GreetingS microservice: %s", r2.GetMessage())
+	log.Printf("GreetingC microservice: %s", r3.GetMessage())
 
 }
