@@ -12,7 +12,7 @@ import (
 )
 
 var (
-	addr1 = "localhost:3333"
+	addr1 = "192.168.1.157:3333"
 	addr2 = "localhost:3334"
 )
 
