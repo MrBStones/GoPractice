@@ -1,0 +1,38 @@
+syntax = "proto3";
+option go_package = "GRPCmicro.stc";
+
+service Teacher {
+    rpc SayTeacher (TeacherRequest) returns (TeacherReply) {}
+}
+
+service Student{
+    rpc SayStudent (StudentRequest) returns (StudentReply) {}
+}
+
+service Course {
+    rpc SayCourse (CourseRequest) returns (CourseReply) {}
+}
+
+message CourseRequest {
+    string name = 1;
+}
+
+message StudentRequest {
+    string name = 1;
+}
+
+message TeacherRequest {
+    string name = 1;
+}
+
+message CourseReply {
+    string message = 1;
+}
+
+message StudentReply {
+    string message = 1;
+}
+
+message TeacherReply {
+    string message = 1;
+}
