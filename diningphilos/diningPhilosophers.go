@@ -34,77 +34,95 @@ import (
 	"time"
 )
 
-func main() {
-	var finished = make(chan bool)
-	var forks = make([]chan int, 5)
-	for i := 0; i < 5; i++ {
-		forks[i] = make(chan int)
-		go fork(forks[i])
-	}
+var finished = make(chan bool)
+var times = 3
+var timeunit = time.Millisecond
 
-	for i := 0; i < 5; i++ {
-		go func(i int, forkChannel chan int) {
-			phill(i, forkChannel, forks[(i+1)%5], finished)
-		}(i, forks[i])
-	}
+func main() {
+
+	// make L and R Channel per fork
+	fcL1 := make(chan bool)
+	fcL2 := make(chan bool)
+	fcL3 := make(chan bool)
+	fcL4 := make(chan bool)
+	fcL5 := make(chan bool)
+	fcR1 := make(chan bool)
+	fcR2 := make(chan bool)
+	fcR3 := make(chan bool)
+	fcR4 := make(chan bool)
+	fcR5 := make(chan bool)
+
+	// spawn threads
+	go fork(fcL1, fcR1)
+	go fork(fcL2, fcR2)
+	go fork(fcL3, fcR3)
+	go fork(fcL4, fcR4)
+	go fork(fcL5, fcR5)
+
+	go phill(1, fcR1, fcL2)
+	go phill(2, fcR2, fcL3)
+	go phill(3, fcR3, fcL4)
+	go phill(4, fcR4, fcL5)
+	go phill(5, fcR5, fcL1)
 
 	for i := 0; i < 5; i++ {
 		<-finished
 	}
-	fmt.Println("All philosophers have eaten 3 times")
+	fmt.Println("All philosophers have eaten", times, "times")
 }
 
-func phill(pNumber int, L chan int, R chan int, F chan bool) {
+func phill(n int, L chan bool, R chan bool) {
 	var timesNomNommed = 0
-	LeftForkNum := pNumber
-	RightForkNum := (pNumber + 1) % 5
+	LeftForkNum := n
+	RightForkNum := (n + 1) % 5
 
 	for {
-
 		// Determine if the philosopher is thinking or eating
 		randnum := rand.IntN(100)
 		if randnum > 50 {
-			fmt.Println(pNumber, "thinking")
-			time.Sleep(time.Duration(randnum) * time.Millisecond)
+			fmt.Println(n, "thinking")
+			time.Sleep(time.Duration(randnum) * timeunit)
 			continue
 		}
 
 		// Determine which fork to pick up first by comparing the fork numbers
 		// Smallest numbered fork is picked up first to avoid deadlock
 		if LeftForkNum < RightForkNum {
-			L <- 1
-			R <- 1
+			L <- true
+			R <- true
 		} else {
-			R <- 1
-			L <- 1
+			R <- true
+			L <- true
 		}
 
-		fmt.Println(pNumber, "eating")
-		time.Sleep(100 * time.Millisecond)
+		fmt.Println(n, "eating")
+		time.Sleep(time.Duration(randnum+100) * timeunit)
 
-		res1 := <-L
-		res2 := <-R
+		<-L
+		fmt.Println(n, "put down left fork")
+		<-R
+		fmt.Println(n, "put down right fork")
 
-		if res1 != 2 || res2 != 2 {
-
-		}
-
-		fmt.Println(pNumber, "done eating")
-		time.Sleep(100 * time.Millisecond)
+		fmt.Println(n, "done eating")
+		time.Sleep(100 * timeunit)
 
 		timesNomNommed++
-		if timesNomNommed == 3 {
-			fmt.Println(pNumber, "ate 3 times")
-			F <- true
+		if timesNomNommed == times {
+			fmt.Println(n, "ate", times, "times")
+			finished <- true
 		}
 	}
 }
 
-func fork(fc chan int) {
+func fork(L chan bool, R chan bool) {
 	for {
-		<-fc // philosopher is eating
-		time.Sleep(100 * time.Millisecond)
-		fc <- 2 // philosopher is done eating
+		// select the first channel with a signal
+		select {
+		case <-L:
+			L <- false
+		case <-R:
+			R <- false
+		}
 	}
 }
 
