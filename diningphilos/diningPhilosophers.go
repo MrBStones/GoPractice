@@ -129,6 +129,4 @@ func fork(L chan bool, R chan bool) {
 // Code does not deadlock because the philosophers pick up the forks in a way that avoids deadlock.
 // Every philosopher exept for the 5th philosopher picks up their left fork first.
 // The 5th philosopher picks up the right fork first.
-// This way, the philosopher with the smallest fork number will always pick up the left fork first.
-// This way, the philosophers will never be in a situation where they are waiting for each other to put down the fork they are holding.
-// This way, the philosophers can always pick up the forks they need to eat.
+// This way, if every philosopher tries to pick up forks at the same time, at least one will succeed
