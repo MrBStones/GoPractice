@@ -130,3 +130,115 @@ func fork(L chan bool, R chan bool) {
 // Every philosopher exept for the 5th philosopher picks up their left fork first.
 // The 5th philosopher picks up the right fork first.
 // This way, if every philosopher tries to pick up forks at the same time, at least one will succeed
+
+// --- output --- (ofc this is non deterministic so results will never be the same)
+// 5 thinking
+// 1 thinking
+// 2 thinking
+// 3 eating
+// 1 thinking
+// 5 thinking
+// 1 thinking
+// 3 put down left fork
+// 3 put down right fork
+// 3 done eating
+// 4 eating
+// 2 eating
+// 5 thinking
+// 5 thinking
+// 3 thinking
+// 4 put down left fork
+// 4 put down right fork
+// 4 done eating
+// 2 put down left fork
+// 2 put down right fork
+// 1 eating
+// 2 done eating
+// 5 thinking
+// 3 eating
+// 2 thinking
+// 1 put down left fork
+// 1 put down right fork
+// 1 done eating
+// 5 thinking
+// 3 put down left fork
+// 3 put down right fork
+// 3 done eating
+// 4 eating
+// 2 eating
+// 1 thinking
+// 1 thinking
+// 4 put down left fork
+// 4 put down right fork
+// 4 done eating
+// 5 eating
+// 2 put down left fork
+// 2 put down right fork
+// 2 done eating
+// 3 eating
+// 1 thinking
+// 1 thinking
+// 5 put down left fork
+// 5 put down right fork
+// 5 done eating
+// 3 put down left fork
+// 3 put down right fork
+// 3 done eating
+// 4 eating
+// 2 eating
+// 1 thinking
+// 3 ate 3 times
+// 4 put down left fork
+// 4 put down right fork
+// 4 done eating
+// 5 eating
+// 2 put down left fork
+// 2 put down right fork
+// 2 done eating
+// 3 eating
+// 4 ate 3 times
+// 2 ate 3 times
+// 2 thinking
+// 5 put down left fork
+// 5 put down right fork
+// 5 done eating
+// 1 eating
+// 3 put down left fork
+// 3 put down right fork
+// 3 done eating
+// 4 eating
+// 2 thinking
+// 1 put down left fork
+// 1 put down right fork
+// 1 done eating
+// 4 put down left fork
+// 4 put down right fork
+// 4 done eating
+// 5 eating
+// 3 eating
+// 4 thinking
+// 3 put down left fork
+// 3 put down right fork
+// 3 done eating
+// 2 eating
+// 5 put down left fork
+// 5 put down right fork
+// 5 done eating
+// 4 thinking
+// 3 thinking
+// 5 ate 3 times
+// 2 put down left fork
+// 2 put down right fork
+// 2 done eating
+// 1 eating
+// 3 thinking
+// 4 thinking
+// 3 thinking
+// 1 put down left fork
+// 1 put down right fork
+// 1 done eating
+// 5 eating
+// 2 eating
+// 3 thinking
+// 1 ate 3 times
+// All philosophers have eaten 3 times
