@@ -31,15 +31,11 @@ package main
 import (
 	"fmt"
 	"math/rand/v2"
-	"sync"
 	"time"
 )
 
-var arbiter1 sync.Mutex
-var arbiter2 sync.Mutex
-
 func main() {
-	var wgP sync.WaitGroup
+	var finished = make(chan bool)
 	var forks = make([]chan int, 5)
 	for i := 0; i < 5; i++ {
 		forks[i] = make(chan int)
@@ -47,45 +43,59 @@ func main() {
 	}
 
 	for i := 0; i < 5; i++ {
-		wgP.Add(1)
 		go func(i int, forkChannel chan int) {
-			defer wgP.Done()
-			phill(i, forkChannel, forks[(i+1)%5])
+			phill(i, forkChannel, forks[(i+1)%5], finished)
 		}(i, forks[i])
 	}
 
-	wgP.Wait()
+	for i := 0; i < 5; i++ {
+		<-finished
+	}
 	fmt.Println("All philosophers have eaten 3 times")
 }
 
-func phill(pNumber int, L chan int, R chan int) {
+func phill(pNumber int, L chan int, R chan int, F chan bool) {
 	var timesNomNommed = 0
+	LeftForkNum := pNumber
+	RightForkNum := (pNumber + 1) % 5
+
 	for {
-		if rand.IntN(100) < 50 {
+
+		// Determine if the philosopher is thinking or eating
+		randnum := rand.IntN(100)
+		if randnum > 50 {
 			fmt.Println(pNumber, "thinking")
-			time.Sleep(100 * time.Millisecond)
+			time.Sleep(time.Duration(randnum) * time.Millisecond)
 			continue
 		}
 
-		arbiter1.Lock()
-		L <- 1
-		R <- 1
-		arbiter1.Unlock()
+		// Determine which fork to pick up first by comparing the fork numbers
+		// Smallest numbered fork is picked up first to avoid deadlock
+		if LeftForkNum < RightForkNum {
+			L <- 1
+			R <- 1
+		} else {
+			R <- 1
+			L <- 1
+		}
 
 		fmt.Println(pNumber, "eating")
 		time.Sleep(100 * time.Millisecond)
 
-		arbiter2.Lock()
-		<-L
-		<-R
-		arbiter2.Unlock()
+		res1 := <-L
+		res2 := <-R
+
+		if res1 != 2 || res2 != 2 {
+
+		}
 
 		fmt.Println(pNumber, "done eating")
 		time.Sleep(100 * time.Millisecond)
 
 		timesNomNommed++
 		if timesNomNommed == 3 {
-			break
+			fmt.Println(pNumber, "ate 3 times")
+			F <- true
 		}
 	}
 }
@@ -94,8 +104,13 @@ func fork(fc chan int) {
 	for {
 		<-fc // philosopher is eating
 		time.Sleep(100 * time.Millisecond)
-		fc <- 1 // philosopher is done eating
+		fc <- 2 // philosopher is done eating
 	}
 }
 
-// Code does not deadlock because the arbiter1 and arbiter2 mutexes are used to ensure that the forks are not taken by two at the same time
+// Code does not deadlock because the philosophers pick up the forks in a way that avoids deadlock.
+// Every philosopher exept for the 5th philosopher picks up their left fork first.
+// The 5th philosopher picks up the right fork first.
+// This way, the philosopher with the smallest fork number will always pick up the left fork first.
+// This way, the philosophers will never be in a situation where they are waiting for each other to put down the fork they are holding.
+// This way, the philosophers can always pick up the forks they need to eat.
