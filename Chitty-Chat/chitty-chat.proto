@@ -1,0 +1,14 @@
+syntax = "proto3";
+option go_package = "central.stc";
+
+service Leader {
+    rpc SayLeader (LeaderRequest) returns (LeaderReply) {}
+}
+
+message LeaderRequest {
+    int32 toAdd = 1;
+}
+
+message LeaderReply {
+    string message = 1;
+}
